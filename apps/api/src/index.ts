@@ -11,8 +11,8 @@ async function init() {
     server.listen(PORT, () => {
       logger.info(`http server is running on PORT ${PORT}`);
     });
-  } catch (err) {
-    logger.error(`Error creating http server`, { err });
+  } catch (error) {
+    logger.error(`Error creating http server`, { error });
     process.exit(1);
   }
 }
