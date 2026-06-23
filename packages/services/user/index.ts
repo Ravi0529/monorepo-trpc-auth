@@ -40,7 +40,7 @@ class UserService {
     }
   }
 
-  private async getUserById(id: string): Promise<GetLoggedInUserInfoOutputType> {
+  public async getUserById(id: string): Promise<GetLoggedInUserInfoOutputType> {
     const users = await db
       .select({
         id: usersTable.id,
@@ -158,15 +158,12 @@ class UserService {
     }
   }
 
-  public async verifyAndDecodeUserToken(token: string): Promise<GetLoggedInUserInfoOutputType> {
+  public async verifyAndDecodeUserToken(token: string) {
     try {
       const { id } = await this.verifyUserToken(token);
       logger.info(`User token verified for user ID: ${id}`);
 
-      const userInfo = await this.getUserById(id);
-      logger.info(`User info retrieved for user ID: ${id}`);
-
-      return { ...userInfo };
+      return { id };
     } catch (error) {
       logger.error("Error verifying and decoding user token:", error);
       throw error;
