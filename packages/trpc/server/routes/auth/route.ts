@@ -2,12 +2,14 @@ import { userService } from "../../services";
 import {
   createUserWithEmailAndPasswordInputModel,
   createUserWithEmailAndPasswordOutputModel,
+  getLoggedInUserInfoInputModel,
+  getLoggedInUserInfoOutputModel,
   signInUserWithEmailAndPasswordInputModel,
   signInUserWithEmailAndPasswordOutputModel,
 } from "./model";
 import { publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
-import { setAuthenticationCookie } from "../../utils/cookie";
+import { getAuthenticationCookie, setAuthenticationCookie } from "../../utils/cookie";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
@@ -62,5 +64,28 @@ export const authRouter = router({
       setAuthenticationCookie(ctx, token);
 
       return { id };
+    }),
+
+  getLoggedInUserInfo: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/getLoggedInUserInfo"),
+        tags: TAGS,
+        summary: "Get information about the currently logged-in user",
+        description: "Retrieves information about the currently logged-in user.",
+      },
+    })
+    .input(getLoggedInUserInfoInputModel)
+    .output(getLoggedInUserInfoOutputModel)
+    .query(async ({ ctx }) => {
+      const userToken = getAuthenticationCookie(ctx);
+      if (!userToken) {
+        throw new Error("User is not authenticated");
+      }
+      const { id, firstName, lastName, email, avatarUrl } =
+        await userService.verifyAndDecodeUserToken(userToken);
+
+      return { id, firstName, lastName, email, avatarUrl };
     }),
 });

@@ -30,3 +30,15 @@ export const signInUserWithEmailAndPasswordInputModel = z.object({
 export const signInUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("The unique identifier of the newly created user"),
 });
+
+export const getLoggedInUserInfoInputModel = z
+  .undefined()
+  .describe("No input required for this endpoint");
+
+export const getLoggedInUserInfoOutputModel = z.object({
+  id: z.string().describe("The unique identifier of the user"),
+  firstName: z.string().min(1).max(80).describe("First name of the user"),
+  lastName: z.string().min(1).max(80).describe("Last name of the user"),
+  email: z.email().max(255).describe("Email address of the user"),
+  avatarUrl: z.string().url().max(2048).optional().describe("URL of the user's avatar image"),
+});

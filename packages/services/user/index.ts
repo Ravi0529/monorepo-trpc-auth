@@ -11,6 +11,7 @@ import {
   GenerateUserTokenPayloadType,
   signInUserWithEmailAndPasswordInput,
   SignInUserWithEmailAndPasswordInputType,
+  GetLoggedInUserInfoOutputType,
 } from "./model";
 import { env } from "../env";
 
@@ -27,6 +28,43 @@ class UserService {
     const { id } = await generateUserTokenPayload.parseAsync(payload);
     const token = JWT.sign({ id }, env.JWT_SECRET);
     return { token };
+  }
+
+  private async verifyUserToken(token: string): Promise<GenerateUserTokenPayloadType> {
+    try {
+      const verificationResult = JWT.verify(token, env.JWT_SECRET) as GenerateUserTokenPayloadType;
+      return verificationResult;
+    } catch (error) {
+      logger.error("Error verifying user token:", error);
+      throw new Error("Invalid or expired token");
+    }
+  }
+
+  private async getUserById(id: string): Promise<GetLoggedInUserInfoOutputType> {
+    const users = await db
+      .select({
+        id: usersTable.id,
+        firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
+        email: usersTable.email,
+        avatarUrl: usersTable.avatarUrl,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, id));
+
+    const user = users[0];
+
+    if (!user) {
+      throw new Error(`User with ID ${id} not found`);
+    }
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      avatarUrl: user.avatarUrl ?? undefined,
+    };
   }
 
   public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordInputType) {
@@ -116,6 +154,21 @@ class UserService {
       };
     } catch (error) {
       logger.error("Error signing in user:", error);
+      throw error;
+    }
+  }
+
+  public async verifyAndDecodeUserToken(token: string): Promise<GetLoggedInUserInfoOutputType> {
+    try {
+      const { id } = await this.verifyUserToken(token);
+      logger.info(`User token verified for user ID: ${id}`);
+
+      const userInfo = await this.getUserById(id);
+      logger.info(`User info retrieved for user ID: ${id}`);
+
+      return { ...userInfo };
+    } catch (error) {
+      logger.error("Error verifying and decoding user token:", error);
       throw error;
     }
   }

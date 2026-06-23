@@ -36,3 +36,13 @@ export const signInUserWithEmailAndPasswordInput = z.object({
 export type SignInUserWithEmailAndPasswordInputType = z.infer<
   typeof signInUserWithEmailAndPasswordInput
 >;
+
+export const getLoggedInUserInfoOutput = z.object({
+  id: z.string().describe("The unique identifier of the user"),
+  firstName: z.string().min(1).max(80).describe("First name of the user"),
+  lastName: z.string().min(1).max(80).describe("Last name of the user"),
+  email: z.email().max(255).describe("Email address of the user"),
+  avatarUrl: z.string().url().max(2048).optional().describe("URL of the user's avatar image"),
+});
+
+export type GetLoggedInUserInfoOutputType = z.infer<typeof getLoggedInUserInfoOutput>;
