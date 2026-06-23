@@ -4,4 +4,5 @@ packages:
 allowBuilds:
   '@swc/core': false
   esbuild: false
+  node: false
   sharp: false

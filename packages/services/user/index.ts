@@ -1,12 +1,16 @@
 import { db, eq } from "@repo/database";
 import bcryptjs from "bcryptjs";
+import * as JWT from "jsonwebtoken";
 
 import { usersTable } from "@repo/database/schema";
 import { googleOAuth2Client } from "../clients/google-oauth";
 import {
   createUserWithEmailAndPasswordInput,
   CreateUserWithEmailAndPasswordInputType,
+  generateUserTokenPayload,
+  GenerateUserTokenPayloadType,
 } from "./model";
+import { env } from "../env";
 
 import { logger } from "@repo/logger";
 
@@ -15,6 +19,12 @@ class UserService {
     const result = await db.select().from(usersTable).where(eq(usersTable.email, email));
     if (!result || result.length === 0) return null;
     return result[0];
+  }
+
+  private async generateUserToken(payload: GenerateUserTokenPayloadType) {
+    const { id } = await generateUserTokenPayload.parseAsync(payload);
+    const token = JWT.sign({ id }, env.JWT_SECRET);
+    return { token };
   }
 
   public async createUserWithEmailAndPassword(payload: CreateUserWithEmailAndPasswordInputType) {
@@ -60,8 +70,14 @@ class UserService {
         throw new Error("Failed to create user");
       }
 
+      const userId = userInsertResult[0].id;
+      const { token } = await this.generateUserToken({ id: userId });
+
       logger.info(`User created with email: ${email}, ID: ${userInsertResult[0].id}`);
-      return { id: userInsertResult[0].id };
+      return {
+        id: userId,
+        token,
+      };
     } catch (error) {
       logger.error("Error creating user:", error);
       throw new Error("Error creating user");

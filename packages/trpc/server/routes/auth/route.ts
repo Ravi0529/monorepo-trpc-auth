@@ -5,6 +5,7 @@ import {
 } from "./model";
 import { publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
+import { setAuthenticationCookie } from "../../utils/cookie";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
@@ -22,15 +23,18 @@ export const authRouter = router({
     })
     .input(createUserWithEmailAndPasswordInputModel)
     .output(createUserWithEmailAndPasswordOutputModel)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { firstName, lastName, email, password, avatarUrl } = input;
-      const { id } = await userService.createUserWithEmailAndPassword({
+      const { id, token } = await userService.createUserWithEmailAndPassword({
         firstName,
         lastName,
         email,
         password,
         avatarUrl,
       });
+
+      setAuthenticationCookie(ctx, token);
+
       return { id };
     }),
 });
