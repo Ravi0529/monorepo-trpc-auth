@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Mail, UserPlus, UsersRound, KeyRound } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -18,7 +20,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useSignUp } from "~/hooks/api/auth";
+import { useSignUp, useUser } from "~/hooks/api/auth";
 
 const signUpSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -37,6 +39,8 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
   const { createUserWithEmailAndPasswordAsync } = useSignUp();
+  const router = useRouter();
+  const { user, isLoading, isFetching } = useUser();
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -48,6 +52,28 @@ const SignUpForm = () => {
     },
   });
 
+  useEffect(() => {
+    if (!isLoading && !isFetching && user) {
+      router.replace("/dashboard");
+    }
+  }, [isFetching, isLoading, router, user]);
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-lg">
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Checking your session...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null;
+  }
+
   const handleSignUp = async (values: SignUpFormValues) => {
     console.log("Signup form data:", values);
     const { id } = await createUserWithEmailAndPasswordAsync({
@@ -57,6 +83,7 @@ const SignUpForm = () => {
       password: values.password,
     });
     console.log("User created with ID:", id);
+    router.replace("/dashboard");
   };
 
   return (

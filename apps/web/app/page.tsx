@@ -1,7 +1,21 @@
-import { api } from "~/trpc/server";
+"use client";
 
-export default async function Home() {
-  const { status } = await api.health.getHealth.query();
+import { useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+import { useUser } from "~/hooks/api/auth";
+
+const Home = () => {
+  const { user } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user && user.id) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/login");
+    }
+  }, [user, router]);
   return (
     <main className="min-h-screen min-w-screen flex justify-center items-center">
       <div>
@@ -10,4 +24,6 @@ export default async function Home() {
       </div>
     </main>
   );
-}
+};
+
+export default Home;

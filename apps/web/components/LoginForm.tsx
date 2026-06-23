@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ArrowRight, KeyRound, LogIn, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -18,7 +20,7 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useSignIn } from "~/hooks/api/auth";
+import { useSignIn, useUser } from "~/hooks/api/auth";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -29,6 +31,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const { signInUserWithEmailAndPasswordAsync } = useSignIn();
+  const router = useRouter();
+  const { user, isLoading, isFetching } = useUser();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -38,6 +42,28 @@ const LoginForm = () => {
     },
   });
 
+  useEffect(() => {
+    if (!isLoading && !isFetching && user) {
+      router.replace("/dashboard");
+    }
+  }, [isFetching, isLoading, router, user]);
+
+  if (isLoading || isFetching) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-lg">
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Checking your session...
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user) {
+    return null;
+  }
+
   const handleLogin = async (values: LoginFormValues) => {
     const result = await signInUserWithEmailAndPasswordAsync({
       email: values.email,
@@ -45,6 +71,7 @@ const LoginForm = () => {
     });
 
     console.log("Signed in:", result);
+    router.replace("/dashboard");
   };
 
   return (
