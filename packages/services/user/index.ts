@@ -9,6 +9,8 @@ import {
   CreateUserWithEmailAndPasswordInputType,
   generateUserTokenPayload,
   GenerateUserTokenPayloadType,
+  signInUserWithEmailAndPasswordInput,
+  SignInUserWithEmailAndPasswordInputType,
 } from "./model";
 import { env } from "../env";
 
@@ -80,7 +82,41 @@ class UserService {
       };
     } catch (error) {
       logger.error("Error creating user:", error);
-      throw new Error("Error creating user");
+      throw error;
+    }
+  }
+
+  public async signInUserWithEmailAndPassword(payload: SignInUserWithEmailAndPasswordInputType) {
+    try {
+      const { email, password } = await signInUserWithEmailAndPasswordInput.parseAsync(payload);
+
+      const existingUser = await this.getUserByEmail(email);
+      if (!existingUser) {
+        logger.warn(`User with email ${email} not found`);
+        throw new Error("User with this email does not exist");
+      }
+
+      if (!existingUser.passwordHash) {
+        logger.error(`Invalid Authentication method for user with email ${email}`);
+        throw new Error("Invalid Authentication method for this user");
+      }
+
+      const isPasswordValid = await bcryptjs.compare(password, existingUser.passwordHash);
+      if (!isPasswordValid) {
+        logger.warn(`Invalid password for user with email ${email}`);
+        throw new Error("Invalid email or password");
+      }
+
+      const { token } = await this.generateUserToken({ id: existingUser.id });
+
+      logger.info(`User signed in with email: ${email}, ID: ${existingUser.id}`);
+      return {
+        id: existingUser.id,
+        token,
+      };
+    } catch (error) {
+      logger.error("Error signing in user:", error);
+      throw error;
     }
   }
 }

@@ -16,3 +16,17 @@ export const createUserWithEmailAndPasswordInputModel = z.object({
 export const createUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("The unique identifier of the newly created user"),
 });
+
+export const signInUserWithEmailAndPasswordInputModel = z.object({
+  email: z.email().max(255).describe("Email address of the user"),
+  password: z
+    .string()
+    .min(6)
+    .max(255)
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .describe("Password for the user account"),
+});
+
+export const signInUserWithEmailAndPasswordOutputModel = z.object({
+  id: z.string().describe("The unique identifier of the newly created user"),
+});
