@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
+
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { ArrowRight, Mail, UserPlus, UsersRound, KeyRound } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -60,7 +63,10 @@ const SignUpForm = () => {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <Card className="w-full max-w-lg">
         <CardHeader className="space-y-2">
-          <CardTitle className="text-2xl">Create your account</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <UserPlus className="h-5 w-5" />
+            Create your account
+          </CardTitle>
           <CardDescription>Fill in your details below to get started.</CardDescription>
         </CardHeader>
 
@@ -75,7 +81,15 @@ const SignUpForm = () => {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Jane" autoComplete="given-name" {...field} />
+                        <div className="relative">
+                          <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Jane"
+                            autoComplete="given-name"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -89,7 +103,15 @@ const SignUpForm = () => {
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" autoComplete="family-name" {...field} />
+                        <div className="relative">
+                          <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            placeholder="Doe"
+                            autoComplete="family-name"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -104,12 +126,16 @@ const SignUpForm = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="jane@example.com"
-                        autoComplete="email"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="jane@example.com"
+                          autoComplete="email"
+                          className="pl-9"
+                          {...field}
+                        />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,21 +149,36 @@ const SignUpForm = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter a secure password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          type="password"
+                          placeholder="Enter a secure password"
+                          autoComplete="new-password"
+                          className="pl-9"
+                          {...field}
+                        />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                <UserPlus className="mr-2 h-4 w-4" />
                 Sign Up
               </Button>
+
+              <div className="text-center text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Button asChild variant="link" className="h-auto p-0 align-baseline">
+                  <Link href="/login">
+                    Log in
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
