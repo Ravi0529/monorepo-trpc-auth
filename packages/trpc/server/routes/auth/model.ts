@@ -42,3 +42,7 @@ export const getLoggedInUserInfoOutputModel = z.object({
   email: z.email().max(255).describe("Email address of the user"),
   avatarUrl: z.string().url().max(2048).optional().describe("URL of the user's avatar image"),
 });
+
+export const logoutOutputModel = z.object({
+  success: z.boolean().describe("Indicates whether the logout operation was successful"),
+});

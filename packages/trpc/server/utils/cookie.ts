@@ -33,8 +33,8 @@ export function getCookieFactory(req: Request) {
 }
 
 export function clearCookieFactory(res: Response) {
-  return function clearCookie(name: string) {
-    res.clearCookie(name);
+  return function clearCookie(name: string, opts: CookieOptions = defaultCookieOptions) {
+    res.clearCookie(name, opts);
   };
 }
 
@@ -51,5 +51,8 @@ export function getAuthenticationCookie(ctx: TRPCContext) {
 }
 
 export function clearAuthenticationCookie(ctx: TRPCContext) {
-  ctx.clearCookie(AUTHENTICATION_COOKIE_NAME);
+  ctx.clearCookie(AUTHENTICATION_COOKIE_NAME, {
+    ...defaultCookieOptions,
+    maxAge: undefined,
+  });
 }

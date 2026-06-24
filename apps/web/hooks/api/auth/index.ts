@@ -68,14 +68,56 @@ export const useUser = () => {
     isFetched,
     isLoading,
     status,
-  } = trpc.auth.getLoggedInUserInfo.useQuery();
+  } = trpc.auth.getLoggedInUserInfo.useQuery(undefined, {
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+  });
 
   return {
-    user,
+    user: error ? undefined : user,
     error,
     isFetching,
     isFetched,
     isLoading,
+    status,
+  };
+};
+
+export const useLogout = () => {
+  const utils = trpc.useUtils();
+
+  const {
+    mutateAsync: logoutAsync,
+    mutate: logout,
+    error,
+    failureCount,
+    isError,
+    isIdle,
+    isSuccess,
+    status,
+  } = trpc.auth.logout.useMutation({
+    onMutate: async () => {
+      await utils.auth.getLoggedInUserInfo.cancel();
+      utils.auth.getLoggedInUserInfo.setData(undefined, undefined);
+    },
+    onSuccess: async () => {
+      await utils.auth.getLoggedInUserInfo.invalidate();
+    },
+    onSettled: async () => {
+      await utils.auth.getLoggedInUserInfo.invalidate();
+    },
+  });
+
+  return {
+    logoutAsync,
+    logout,
+    error,
+    failureCount,
+    isError,
+    isIdle,
+    isSuccess,
     status,
   };
 };

@@ -32,7 +32,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const LoginForm = () => {
   const { signInUserWithEmailAndPasswordAsync } = useSignIn();
   const router = useRouter();
-  const { user, isLoading, isFetching } = useUser();
+  const { user, isLoading, isFetching, error } = useUser();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,10 +43,10 @@ const LoginForm = () => {
   });
 
   useEffect(() => {
-    if (!isLoading && !isFetching && user) {
+    if (!isLoading && !isFetching && user && !error) {
       router.replace("/dashboard");
     }
-  }, [isFetching, isLoading, router, user]);
+  }, [error, isFetching, isLoading, router, user]);
 
   if (isLoading || isFetching) {
     return (
@@ -60,7 +60,7 @@ const LoginForm = () => {
     );
   }
 
-  if (user) {
+  if (user && !error) {
     return null;
   }
 

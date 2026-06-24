@@ -4,12 +4,13 @@ import {
   createUserWithEmailAndPasswordOutputModel,
   getLoggedInUserInfoInputModel,
   getLoggedInUserInfoOutputModel,
+  logoutOutputModel,
   signInUserWithEmailAndPasswordInputModel,
   signInUserWithEmailAndPasswordOutputModel,
 } from "./model";
 import { authenticatedProcedure, publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
-import { setAuthenticationCookie } from "../../utils/cookie";
+import { clearAuthenticationCookie, setAuthenticationCookie } from "../../utils/cookie";
 
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
@@ -85,5 +86,23 @@ export const authRouter = router({
       );
 
       return { id, firstName, lastName, email, avatarUrl };
+    }),
+
+  logout: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/logout"),
+        tags: TAGS,
+        protect: true,
+        summary: "Log out the currently authenticated user",
+        description: "Clears the authentication cookie, effectively logging out the user.",
+      },
+    })
+    .output(logoutOutputModel)
+    .mutation(async ({ ctx }) => {
+      clearAuthenticationCookie(ctx);
+
+      return { success: true };
     }),
 });

@@ -8,7 +8,8 @@ import { BadgeInfo, Mail, ShieldCheck, User, UserCircle2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
-import { useUser } from "~/hooks/api/auth";
+import { Button } from "~/components/ui/button";
+import { useLogout, useUser } from "~/hooks/api/auth";
 
 const getInitials = (firstName?: string, lastName?: string) =>
   `${firstName?.trim().charAt(0) ?? ""}${lastName?.trim().charAt(0) ?? ""}`.toUpperCase() || "U";
@@ -16,12 +17,21 @@ const getInitials = (firstName?: string, lastName?: string) =>
 const DashboardPage = () => {
   const router = useRouter();
   const { user, isLoading, isFetching, error } = useUser();
+  const { logoutAsync, isIdle: isLogoutIdle, isSuccess: isLogoutSuccess } = useLogout();
 
   useEffect(() => {
     if (!isLoading && !isFetching && (!user || error)) {
       router.replace("/login");
     }
   }, [error, isFetching, isLoading, router, user]);
+
+  const handleLogout = async () => {
+    try {
+      await logoutAsync(undefined);
+    } finally {
+      router.replace("/login");
+    }
+  };
 
   if (isLoading || isFetching) {
     return (
@@ -64,10 +74,20 @@ const DashboardPage = () => {
     <div className="flex min-h-[calc(100vh-4rem)] justify-center px-4 py-12">
       <Card className="w-full max-w-2xl">
         <CardHeader className="space-y-2">
-          <CardTitle className="flex items-center gap-2 text-2xl">
-            <UserCircle2 className="h-5 w-5" />
-            Dashboard
-          </CardTitle>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <UserCircle2 className="h-5 w-5" />
+              Dashboard
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={!isLogoutIdle && !isLogoutSuccess}
+            >
+              {!isLogoutIdle && !isLogoutSuccess ? "Logging out..." : "Logout"}
+            </Button>
+          </div>
           <CardDescription>Here is your basic profile information.</CardDescription>
         </CardHeader>
 
