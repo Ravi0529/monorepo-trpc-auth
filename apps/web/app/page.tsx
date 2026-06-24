@@ -12,8 +12,6 @@ const Home = () => {
   useEffect(() => {
     if (user && user.id) {
       router.replace("/dashboard");
-    } else {
-      router.replace("/login");
     }
   }, [user, router]);
   return (
