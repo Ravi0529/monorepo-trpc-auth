@@ -1,5 +1,7 @@
 import { userService } from "../../services";
 import {
+  authenticateWithGoogleInputModel,
+  authenticateWithGoogleOutputModel,
   createUserWithEmailAndPasswordInputModel,
   createUserWithEmailAndPasswordOutputModel,
   getLoggedInUserInfoInputModel,
@@ -61,6 +63,28 @@ export const authRouter = router({
         email,
         password,
       });
+
+      setAuthenticationCookie(ctx, token);
+
+      return { id };
+    }),
+
+  authenticateWithGoogle: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/authenticateWithGoogle"),
+        tags: TAGS,
+        summary: "Authenticate a user with Google OAuth",
+        description:
+          "Verifies a Google OAuth authorization code and signs the user in or creates a new account.",
+      },
+    })
+    .input(authenticateWithGoogleInputModel)
+    .output(authenticateWithGoogleOutputModel)
+    .mutation(async ({ input, ctx }) => {
+      const { code } = input;
+      const { id, token } = await userService.authenticateWithGoogle({ code });
 
       setAuthenticationCookie(ctx, token);
 

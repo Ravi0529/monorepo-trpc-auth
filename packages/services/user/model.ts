@@ -37,6 +37,16 @@ export type SignInUserWithEmailAndPasswordInputType = z.infer<
   typeof signInUserWithEmailAndPasswordInput
 >;
 
+export const authenticateWithGoogleInput = z.object({
+  code: z.string().min(1).describe("Google OAuth authorization code"),
+});
+
+export type AuthenticateWithGoogleInputType = z.infer<typeof authenticateWithGoogleInput>;
+
+export const authenticateWithGoogleOutput = z.object({
+  id: z.string().describe("The unique identifier of the authenticated user"),
+});
+
 export const getLoggedInUserInfoOutput = z.object({
   id: z.string().describe("The unique identifier of the user"),
   firstName: z.string().min(1).max(80).describe("First name of the user"),

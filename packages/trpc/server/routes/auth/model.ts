@@ -31,6 +31,14 @@ export const signInUserWithEmailAndPasswordOutputModel = z.object({
   id: z.string().describe("The unique identifier of the newly created user"),
 });
 
+export const authenticateWithGoogleInputModel = z.object({
+  code: z.string().min(1).describe("Google OAuth authorization code"),
+});
+
+export const authenticateWithGoogleOutputModel = z.object({
+  id: z.string().describe("The unique identifier of the authenticated user"),
+});
+
 export const getLoggedInUserInfoInputModel = z
   .undefined()
   .describe("No input required for this endpoint");

@@ -20,7 +20,9 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useSignIn, useUser } from "~/hooks/api/auth";
+import { Separator } from "~/components/ui/separator";
+import GoogleAuthButton from "~/components/GoogleAuthButton";
+import { useGoogleAuth, useSignIn, useUser } from "~/hooks/api/auth";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address"),
@@ -31,6 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm = () => {
   const { signInUserWithEmailAndPasswordAsync } = useSignIn();
+  const { authenticateWithGoogleAsync } = useGoogleAuth();
   const router = useRouter();
   const { user, isLoading, isFetching, error } = useUser();
 
@@ -65,12 +68,16 @@ const LoginForm = () => {
   }
 
   const handleLogin = async (values: LoginFormValues) => {
-    const result = await signInUserWithEmailAndPasswordAsync({
+    await signInUserWithEmailAndPasswordAsync({
       email: values.email,
       password: values.password,
     });
 
-    console.log("Signed in:", result);
+    router.replace("/dashboard");
+  };
+
+  const handleGoogleLogin = async (code: string) => {
+    await authenticateWithGoogleAsync({ code });
     router.replace("/dashboard");
   };
 
@@ -86,70 +93,80 @@ const LoginForm = () => {
         </CardHeader>
 
         <CardContent>
-          <Form {...form}>
-            <form className="space-y-6" onSubmit={form.handleSubmit(handleLogin)}>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          type="email"
-                          placeholder="jane@example.com"
-                          autoComplete="email"
-                          className="pl-9"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="space-y-6">
+            <GoogleAuthButton className="w-full" onSuccess={handleGoogleLogin} />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          type="password"
-                          placeholder="Enter your password"
-                          autoComplete="current-password"
-                          className="pl-9"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Or</span>
+              <Separator className="flex-1" />
+            </div>
 
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign In
-              </Button>
+            <Form {...form}>
+              <form className="space-y-6" onSubmit={form.handleSubmit(handleLogin)}>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="jane@example.com"
+                            autoComplete="email"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <div className="text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Button asChild variant="link" className="h-auto p-0 align-baseline">
-                  <Link href="/signup">
-                    Sign up
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Input
+                            type="password"
+                            placeholder="Enter your password"
+                            autoComplete="current-password"
+                            className="pl-9"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign In
                 </Button>
-              </div>
-            </form>
-          </Form>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  Don&apos;t have an account?{" "}
+                  <Button asChild variant="link" className="h-auto p-0 align-baseline">
+                    <Link href="/signup">
+                      Sign up
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
         </CardContent>
       </Card>
     </div>

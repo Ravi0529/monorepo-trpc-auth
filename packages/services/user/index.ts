@@ -1,10 +1,12 @@
-import { db, eq } from "@repo/database";
+import { and, db, eq } from "@repo/database";
 import bcryptjs from "bcryptjs";
 import * as JWT from "jsonwebtoken";
 
-import { usersTable } from "@repo/database/schema";
+import { accountsTable, usersTable } from "@repo/database/schema";
 import { googleOAuth2Client } from "../clients/google-oauth";
 import {
+  authenticateWithGoogleInput,
+  AuthenticateWithGoogleInputType,
   createUserWithEmailAndPasswordInput,
   CreateUserWithEmailAndPasswordInputType,
   generateUserTokenPayload,
@@ -20,6 +22,21 @@ import { logger } from "@repo/logger";
 class UserService {
   private async getUserByEmail(email: string) {
     const result = await db.select().from(usersTable).where(eq(usersTable.email, email));
+    if (!result || result.length === 0) return null;
+    return result[0];
+  }
+
+  private async getAccountByProviderAndAccountId(provider: string, providerAccountId: string) {
+    const result = await db
+      .select()
+      .from(accountsTable)
+      .where(
+        and(
+          eq(accountsTable.provider, provider),
+          eq(accountsTable.providerAccountId, providerAccountId),
+        ),
+      );
+
     if (!result || result.length === 0) return null;
     return result[0];
   }
@@ -120,6 +137,115 @@ class UserService {
       };
     } catch (error) {
       logger.error("Error creating user:", error);
+      throw error;
+    }
+  }
+
+  public async authenticateWithGoogle(payload: AuthenticateWithGoogleInputType) {
+    try {
+      const { code } = await authenticateWithGoogleInput.parseAsync(payload);
+
+      const { tokens } = await googleOAuth2Client.getToken(code);
+      const idToken = tokens.id_token;
+
+      if (!idToken) {
+        logger.error("Google OAuth exchange did not return an ID token");
+        throw new Error("Google authentication failed");
+      }
+
+      const ticket = await googleOAuth2Client.verifyIdToken({
+        idToken,
+        audience: env.GOOGLE_OAUTH_CLIENT_ID,
+      });
+
+      const profile = ticket.getPayload();
+      if (!profile?.sub || !profile.email) {
+        logger.error("Google OAuth payload was missing required profile information");
+        throw new Error("Google authentication failed");
+      }
+
+      if (profile.email_verified !== true) {
+        logger.warn(`Google email address is not verified for ${profile.email}`);
+        throw new Error("Google account email is not verified");
+      }
+
+      const provider = "google";
+      const providerAccountId = profile.sub;
+      const email = profile.email;
+      const avatarUrl = profile.picture ?? undefined;
+      const emailLocalPart = email.split("@")[0] ?? "google";
+      const nameParts = profile.name?.trim().split(/\s+/).filter(Boolean) ?? [];
+      const firstName = profile.given_name?.trim() || nameParts[0] || emailLocalPart || "Google";
+      const lastName =
+        profile.family_name?.trim() ||
+        (nameParts.length > 1 ? nameParts.slice(1).join(" ") : undefined) ||
+        "User";
+
+      const existingAccount = await this.getAccountByProviderAndAccountId(
+        provider,
+        providerAccountId,
+      );
+      if (existingAccount) {
+        const { token } = await this.generateUserToken({ id: existingAccount.userId });
+        logger.info(
+          `Google user signed in through existing account: ${email}, ID: ${existingAccount.userId}`,
+        );
+        return {
+          id: existingAccount.userId,
+          token,
+        };
+      }
+
+      const existingUser = await this.getUserByEmail(email);
+      if (existingUser) {
+        return await db.transaction(async (tx) => {
+          await tx.insert(accountsTable).values({
+            userId: existingUser.id,
+            provider,
+            providerAccountId,
+          });
+
+          const { token } = await this.generateUserToken({ id: existingUser.id });
+          logger.info(`Google account linked to existing user: ${email}, ID: ${existingUser.id}`);
+          return {
+            id: existingUser.id,
+            token,
+          };
+        });
+      }
+
+      return await db.transaction(async (tx) => {
+        const createdUserResult = await tx
+          .insert(usersTable)
+          .values({
+            firstName,
+            lastName,
+            email,
+            avatarUrl,
+          })
+          .returning({ id: usersTable.id });
+
+        const createdUser = createdUserResult[0];
+        if (!createdUser?.id) {
+          logger.error("Failed to create Google user, no ID returned");
+          throw new Error("Failed to create Google user");
+        }
+
+        await tx.insert(accountsTable).values({
+          userId: createdUser.id,
+          provider,
+          providerAccountId,
+        });
+
+        const { token } = await this.generateUserToken({ id: createdUser.id });
+        logger.info(`Google user created: ${email}, ID: ${createdUser.id}`);
+        return {
+          id: createdUser.id,
+          token,
+        };
+      });
+    } catch (error) {
+      logger.error("Error authenticating Google user:", error);
       throw error;
     }
   }

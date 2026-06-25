@@ -20,7 +20,9 @@ import {
   FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
-import { useSignUp, useUser } from "~/hooks/api/auth";
+import { Separator } from "~/components/ui/separator";
+import GoogleAuthButton from "~/components/GoogleAuthButton";
+import { useGoogleAuth, useSignUp, useUser } from "~/hooks/api/auth";
 
 const signUpSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -39,6 +41,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
   const { createUserWithEmailAndPasswordAsync } = useSignUp();
+  const { authenticateWithGoogleAsync } = useGoogleAuth();
   const router = useRouter();
   const { user, isLoading, isFetching } = useUser();
 
@@ -75,14 +78,17 @@ const SignUpForm = () => {
   }
 
   const handleSignUp = async (values: SignUpFormValues) => {
-    console.log("Signup form data:", values);
-    const { id } = await createUserWithEmailAndPasswordAsync({
+    await createUserWithEmailAndPasswordAsync({
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
       password: values.password,
     });
-    console.log("User created with ID:", id);
+    router.replace("/dashboard");
+  };
+
+  const handleGoogleSignUp = async (code: string) => {
+    await authenticateWithGoogleAsync({ code });
     router.replace("/dashboard");
   };
 
@@ -98,21 +104,76 @@ const SignUpForm = () => {
         </CardHeader>
 
         <CardContent>
-          <Form {...form}>
-            <form className="space-y-6" onSubmit={form.handleSubmit(handleSignUp)}>
-              <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-6">
+            <GoogleAuthButton className="w-full" onSuccess={handleGoogleSignUp} />
+
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Or</span>
+              <Separator className="flex-1" />
+            </div>
+
+            <Form {...form}>
+              <form className="space-y-6" onSubmit={form.handleSubmit(handleSignUp)}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              placeholder="Jane"
+                              autoComplete="given-name"
+                              className="pl-9"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              placeholder="Doe"
+                              autoComplete="family-name"
+                              className="pl-9"
+                              {...field}
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="firstName"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
-                            placeholder="Jane"
-                            autoComplete="given-name"
+                            type="email"
+                            placeholder="jane@example.com"
+                            autoComplete="email"
                             className="pl-9"
                             {...field}
                           />
@@ -125,16 +186,17 @@ const SignUpForm = () => {
 
                 <FormField
                   control={form.control}
-                  name="lastName"
+                  name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name</FormLabel>
+                      <FormLabel>Password</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <UsersRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                          <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                           <Input
-                            placeholder="Doe"
-                            autoComplete="family-name"
+                            type="password"
+                            placeholder="Enter a secure password"
+                            autoComplete="new-password"
                             className="pl-9"
                             {...field}
                           />
@@ -144,70 +206,24 @@ const SignUpForm = () => {
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          type="email"
-                          placeholder="jane@example.com"
-                          autoComplete="email"
-                          className="pl-9"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          type="password"
-                          placeholder="Enter a secure password"
-                          autoComplete="new-password"
-                          className="pl-9"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Sign Up
-              </Button>
-
-              <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Button asChild variant="link" className="h-auto p-0 align-baseline">
-                  <Link href="/login">
-                    Log in
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
+                <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Sign Up
                 </Button>
-              </div>
-            </form>
-          </Form>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Button asChild variant="link" className="h-auto p-0 align-baseline">
+                    <Link href="/login">
+                      Log in
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
         </CardContent>
       </Card>
     </div>
