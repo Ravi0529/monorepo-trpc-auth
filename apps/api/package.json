@@ -6,10 +6,11 @@
     "start": "node dist/index.js",
     "dev": "dotenv -- tsx watch ./src/index.ts",
     "build": "tsup",
-    "lint": "eslint src/*"
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
+    "eslint": "^9.39.1",
     "@repo/typescript-config": "workspace:*",
     "@swc/core": "^1.15.8",
     "@types/cookie-parser": "^1.4.10",

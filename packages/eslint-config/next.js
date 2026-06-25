@@ -52,6 +52,19 @@ export const nextJsConfig = [
       ...pluginReactHooks.configs.recommended.rules,
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
+      // TypeScript validates props; prop-types are redundant.
+      "react/prop-types": "off",
+    },
+  },
+  {
+    files: ["**/env.js"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "turbo/no-undeclared-env-vars": "off",
     },
   },
 ];
