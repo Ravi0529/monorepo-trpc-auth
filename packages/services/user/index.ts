@@ -41,6 +41,21 @@ class UserService {
     return result[0];
   }
 
+  private async updateUserAvatarIfMissing(userId: string, avatarUrl?: string) {
+    if (!avatarUrl) return;
+
+    const [existingUser] = await db
+      .select({
+        avatarUrl: usersTable.avatarUrl,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+
+    if (!existingUser || existingUser.avatarUrl) return;
+
+    await db.update(usersTable).set({ avatarUrl }).where(eq(usersTable.id, userId));
+  }
+
   private async generateUserToken(payload: GenerateUserTokenPayloadType) {
     const { id } = await generateUserTokenPayload.parseAsync(payload);
     const token = JWT.sign({ id }, env.JWT_SECRET);
@@ -186,6 +201,7 @@ class UserService {
         providerAccountId,
       );
       if (existingAccount) {
+        await this.updateUserAvatarIfMissing(existingAccount.userId, avatarUrl);
         const { token } = await this.generateUserToken({ id: existingAccount.userId });
         logger.info(
           `Google user signed in through existing account: ${email}, ID: ${existingAccount.userId}`,
@@ -199,6 +215,13 @@ class UserService {
       const existingUser = await this.getUserByEmail(email);
       if (existingUser) {
         return await db.transaction(async (tx) => {
+          if (!existingUser.avatarUrl && avatarUrl) {
+            await tx
+              .update(usersTable)
+              .set({ avatarUrl })
+              .where(eq(usersTable.id, existingUser.id));
+          }
+
           await tx.insert(accountsTable).values({
             userId: existingUser.id,
             provider,
